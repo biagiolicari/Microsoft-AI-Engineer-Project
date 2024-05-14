@@ -4,7 +4,6 @@ class Synthesizer:
     def __init__(self, location_speech, key_speech) -> None:
         self.location_speech = location_speech
         self.key_speech = key_speech
-        #self.tts = tts
 
         self.speech_config = None
         self.speech_synthesizer = None

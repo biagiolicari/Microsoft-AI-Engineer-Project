@@ -14,10 +14,8 @@ def main():
     stt = Voice(REGION, KEY)
     tts = Synthesizer(REGION, KEY)
 
-    mystt = stt.recognize_from_microphone(KEY, REGION, ENDPOINT)
-    print(mystt)
-
-    mytts = tts.synthesizer("Test, one, two three", "en-US-AvaMultilingualNeural", 'en-US')
+    print(stt.transcribe_command(speech_recognition_language='it-IT'))
+    #tts = tts.synthesizer("Test, one, two three", "en-US-AvaMultilingualNeural", 'en-US')
 
 
 if __name__ == '__main__':
