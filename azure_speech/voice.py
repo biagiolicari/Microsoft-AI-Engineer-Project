@@ -1,7 +1,4 @@
-import os
 import azure.cognitiveservices.speech as speech_sdk
-
-from synthesizer import Synthesizer
 
 
 class Voice:
@@ -44,4 +41,3 @@ class Voice:
                         print(f"Error details: {cancellation_details.error_details}")
         except Exception as e:
             print(f"An error occurred during speech recognition: {e}")
-
