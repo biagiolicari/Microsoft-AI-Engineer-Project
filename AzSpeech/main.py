@@ -18,3 +18,7 @@ def main():
     print(mystt)
 
     mytts = tts.synthesizer("Test, one, two three", "en-US-AvaMultilingualNeural", 'en-US')
+
+
+if __name__ == '__main__':
+    main()
