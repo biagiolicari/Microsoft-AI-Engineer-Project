@@ -47,6 +47,11 @@ class FaceDetectionRecognition:
         face = self.mtcnn.extract(image, box, save_path=None)
         return face
     
+    # crea un metodo per verificare il numero di volti con aure vision
+
+    def detect_faces_azure(self, image):
+        pass
+
     '''def load_age_model(self):
         """
         Load a pre-trained age estimation model.
