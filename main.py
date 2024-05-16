@@ -1,32 +1,63 @@
-import os
+import cv2
+import time
 
-from dotenv import load_dotenv
+from cnn_detection.facenet_detection import FaceDetectionRecognition
 
-# from azure_speech.synthesizer import Synthesizer
-# from azure_speech.voice import Voice
-# from gpt import OpenAI
-from large_language_model.bot_gpt import BotAgent
+# Open a connection to the webcam
+cap = cv2.VideoCapture(0)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
+
+if not cap.isOpened():
+    print("Error: Could not open webcam.")
+    exit()
+
+print("Press 'q' to exit.")
+
+frame_skip = 2  # Skip every 2 frames
+frame_count = 0
+
+facenet = FaceDetectionRecognition()
+
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        print("Error: Failed to capture image.")
+        break
+
+    frame_count += 1
+    if frame_count % frame_skip != 0:
+        continue
+
+    start_time = time.time()
 
 
-def main():
-    load_dotenv()
+    img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-    KEY = os.getenv('Key')
-    ENDPOINT = os.getenv('Endpoint')
-    REGION = os.getenv('Region')
-    MODEL = os.getenv('OPENAI_MODEL')
-    KEY_LLM = os.getenv('KEY')
-    ENDPOINT_LLM = os.getenv('ENDPOINT')
+    # Perform face detection
+    boxes, _, nfaces = facenet.detect_faces(img_rgb)
+    print(nfaces)
 
-    # stt = Voice(REGION, KEY)
-    # tts = Synthesizer(REGION, KEY)
-    llm = BotAgent(KEY_LLM, ENDPOINT_LLM, MODEL)
+    age, gender = facenet.predict_age_gender(facenet.extract_face(img_rgb, boxes))
+    print(f"Gender: {gender}, Age: {age}")
 
-    # print(stt.transcribe_command(speech_recognition_language='it-IT'))
-    # tts = tts.synthesizer("Test, one, two three", "en-US-AvaMultilingualNeural", 'en-US')
-    llm.create_system_prompt("")
-    print(llm.chat("hello"))
+    # Draw bounding boxes around detected faces
+    if boxes is not None:
+        for box in boxes:
+            x1, y1, x2, y2 = map(int, box)
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
+    # Calculate and display FPS
+    fps = 1.0 / (time.time() - start_time)
+    cv2.putText(frame, f'FPS: {fps:.2f}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-if __name__ == '__main__':
-    main()
+    # Display the frame with bounding boxes
+    cv2.imshow('Webcam Face Detection', frame)
+
+    # Exit loop if 'q' is pressed
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Release the webcam and close the window
+cap.release()
+cv2.destroyAllWindows()
