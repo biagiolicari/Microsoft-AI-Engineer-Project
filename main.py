@@ -1,76 +1,59 @@
-import cv2
-import time
 import os
+import time
 
-
-
-
-from cnn_detection.facenet_detection import FaceDetectionRecognition
-from azure_speech.synthesizer import Synthesizer
-from azure_speech.voice import Voice 
-from large_language_model.bot_gpt import BotAgent
-from cnn_detection.facenet_detection import FaceDetectionRecognition
-from azure_detect.azurefacedetetct import FaceDetectionRecognitionAzure
-
+import cv2
 from dotenv import load_dotenv
+
+from azure_detect.azurefacedetetct import FaceDetectionRecognitionAzure
+from azure_speech.synthesizer import Synthesizer
+from azure_speech.voice import Voice
+from cnn_detection.facenet_detection import FaceDetectionRecognition
+from large_language_model.bot_gpt import BotAgent
 
 load_dotenv()
 
 
-
 def main():
+    Key_multiservice = os.getenv("key_multiservice")
+    endpoint_multiservice = os.getenv("endpoint_multiservice")
+    region_multiservice = os.getenv("region_multiservice")
 
-    Key_multiservice= os.getenv("key_multiservice")
-    endpoint_multiservice= os.getenv("endpoint_multiservice")
-    region_multiservice= os.getenv("region_multiservice")
+    key_openai = os.getenv("key_openai")
+    endpoint_openai = os.getenv("endpoint_openai")
+    model_openai = os.getenv("model_openai")
 
-    key_openai= os.getenv("key_openai")
-    endpoint_openai= os.getenv("endpoint_openai")
-    model_openai= os.getenv("model_openai")
+    system_prompt = os.getenv("prompt_system")
 
-    system_prompt= os.getenv("prompt_system")
-
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
-    
 
     if not cap.isOpened():
         print("Error: Could not open webcam.")
         exit()
 
-    
     bot = BotAgent(key_openai, endpoint_openai, model_openai)
-    voice = Voice(region_multiservice,Key_multiservice)
-    synthesizer = Synthesizer(region_multiservice,Key_multiservice)
-    
+    voice = Voice(region_multiservice, Key_multiservice)
+    synthesizer = Synthesizer(region_multiservice, Key_multiservice)
 
-    nfaces, img_rgb = count_faces(cap,Key_multiservice,endpoint_multiservice)
+    nfaces, img_rgb = count_faces(cap, Key_multiservice, endpoint_multiservice)
 
     if nfaces == 1:
-        synthesizer.synthesizer(f"Ciao! Ho visto che sei solo, come posso aiutarti?  ", "it-IT-ElsaNeural", "it-IT")
+        synthesizer.synthesizer(f"Ciao! Ho visto che sei solo, come posso aiutarti?  ", "it-IT")
     else:
-        synthesizer.synthesizer(f"Ciao! Ho visto che siete in {nfaces} , come posso aiutarvi? ", "it-IT-ElsaNeural", "it-IT")
+        synthesizer.synthesizer(f"Ciao! Ho visto che siete in {nfaces} , come posso aiutarvi? ", "it-IT")
 
     bot.create_system_prompt(system_prompt)
 
     while True:
-        text,detetc_language=voice.transcribe_command("it-IT")
+        text, detected_lang = voice.transcribe_command()
         result_user = bot.chat(text)
-        synthesizer.synthesizer(result_user, "it-IT-ElsaNeural", "it-IT")
+        synthesizer.synthesizer(result_user, detected_lang)
 
 
-
-    
-    
-
-
-
-
-def count_faces(cap,Key_multiservice,endpoint_multiservice):
-
+def count_faces(cap, Key_multiservice, endpoint_multiservice):
     facenet = FaceDetectionRecognition()
-    azurefacedetect= FaceDetectionRecognitionAzure(Key_multiservice,endpoint_multiservice)
+    azurefacedetect = FaceDetectionRecognitionAzure(Key_multiservice, endpoint_multiservice)
 
     while True:
         ret, frame = cap.read()
@@ -79,7 +62,6 @@ def count_faces(cap,Key_multiservice,endpoint_multiservice):
             break
 
         start_time = time.time()
-
 
         img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
@@ -99,10 +81,6 @@ def count_faces(cap,Key_multiservice,endpoint_multiservice):
         # Display the frame with bounding boxes
         cv2.imshow('Webcam Face Detection', frame)
 
-            
-        
-
-        
         print(f"volti detectati da azure: {azurefacedetect.detect_faces_azure(img_rgb)}")
 
         if nfaces > 0:
@@ -112,15 +90,9 @@ def count_faces(cap,Key_multiservice,endpoint_multiservice):
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-        
     # Release the webcam and close the window
     cap.release()
     cv2.destroyAllWindows()
-
-    
-
-
-    
 
 
 if __name__ == "__main__":

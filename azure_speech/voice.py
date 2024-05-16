@@ -11,9 +11,8 @@ class Voice:
 
         self.command = ''
 
-    def transcribe_command(self, speech_recognition_language):
+    def transcribe_command(self):
         try:
-            self.speech_config.speech_recognition_language = speech_recognition_language
             audio_config = speech_sdk.audio.AudioConfig(use_default_microphone=True)
             auto_detect_source_language_config = speech_sdk.languageconfig.AutoDetectSourceLanguageConfig(
                 languages=["en-US", "de-DE", "it-IT", "fr-FR"]
