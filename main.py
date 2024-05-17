@@ -24,7 +24,7 @@ def main():
 
     system_prompt = os.getenv("prompt_system")
 
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
 
@@ -46,9 +46,25 @@ def main():
     bot.create_system_prompt(system_prompt)
 
     while True:
-        text, detected_lang = voice.transcribe_command()
-        result_user = bot.chat(text)
-        synthesizer.synthesizer(result_user, detected_lang)
+        try:
+            text, detected_lang = voice.transcribe_command()
+            if not text:
+                break
+
+            elif text.lower() == "esci.":
+                synthesizer.synthesizer("A presto!", "it-IT")
+                break
+
+            else:
+                result_user = bot.chat(text)
+                synthesizer.synthesizer(result_user, detected_lang)
+        
+        except Exception as e:
+            print(f"Error: {e}")
+            synthesizer.synthesizer("Mi dispiace, non ho capito. Riprova per favore.", "it-IT")
+
+        
+
 
 
 def count_faces(cap, Key_multiservice, endpoint_multiservice):
