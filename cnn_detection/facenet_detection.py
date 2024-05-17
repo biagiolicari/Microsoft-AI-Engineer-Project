@@ -28,6 +28,9 @@ class FaceDetectionRecognition:
             image = Image.fromarray(image)
         
         boxes, probs = self.mtcnn.detect(image)
+        if boxes is None:
+            return None, None, 0
+
         return boxes, probs, len(boxes)
 
     def extract_face(self, image, box):
