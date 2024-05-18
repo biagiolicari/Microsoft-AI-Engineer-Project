@@ -5,8 +5,8 @@ import azure.cognitiveservices.speech as speech_sdk
 
 def generate_ssml(response_text, voice_name, lang):
     # Choose a random style for express-as
-    styles = ["cheerful", "empathetic", "calm", 'advertisement_upbeat', 'affectionate', 'assistant', 'customerservice',
-              'embarrassed', 'friendly', 'hopeful', 'whispering', 'unfriendly']
+    styles = ["cheerful", "empathetic", "calm", 'advertisement_upbeat', 'affectionate', 'customerservice',
+              'embarrassed', 'friendly', 'hopeful', 'whispering', 'unfriendly', 'shouting', 'lyrical', 'fearful']
     selected_style = random.choice(styles)
 
     # Choose a random role (example roles: "default", "youngAdultFemale", "seniorMale")
@@ -14,7 +14,7 @@ def generate_ssml(response_text, voice_name, lang):
     selected_role = random.choice(roles)
 
     # Set a random style degree between 0.5 and 1.5 for variation
-    styledegree = round(random.uniform(0.5, 1.5), 2)
+    styledegree = round(random.uniform(1.0, 2), 2)
 
     # Generate SSML text with prosody adjustment, express-as styles, style degree, and role
     ssml = f"""

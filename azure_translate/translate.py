@@ -1,6 +1,7 @@
 import uuid
+
 import requests
-import json
+
 
 class Translate:
     def __init__(self, location_translate, key_translate, endpoint_translate) -> None:
@@ -34,9 +35,6 @@ class Translate:
 
         request = requests.post(constructed_url, params=params, headers=headers, json=body)
         response = request.json()
-
-        # print(json.dumps(response, sort_keys=True, ensure_ascii=False, indent=4, separators=(',', ': ')))
-        # print(response[0]["translations"][0]["text"])
 
         res = response[0]["translations"][0]["text"]
         return res

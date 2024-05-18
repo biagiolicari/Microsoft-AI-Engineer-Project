@@ -33,7 +33,7 @@ class Voice:
                 print(f"Speech recognition failed: {speech_recognition_result.reason}")
                 if speech_recognition_result.reason == speech_sdk.ResultReason.NoMatch:
                     print("No speech could be recognized.")
-                    return "",""
+                    return "", ""
                 elif speech_recognition_result.reason == speech_sdk.ResultReason.Canceled:
                     cancellation_details = speech_recognition_result.cancellation_details
                     print(f"Cancellation reason: {cancellation_details.reason}")
