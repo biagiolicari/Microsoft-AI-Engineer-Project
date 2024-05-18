@@ -7,6 +7,7 @@ from azure_detect.azurefacedetect import FaceDetectionRecognitionAzure
 from azure_speech.synthesizer import Synthesizer
 from azure_speech.voice import Voice
 from azure_translate.translate import Translate
+from azure_ocr.ocr import OCR
 from cnn_detection.facenet_detection import FaceDetectionRecognition
 from large_language_model.bot_gpt import BotAgent
 
@@ -39,7 +40,8 @@ def initialize_services(env_vars):
                           'https://api.cognitive.microsofttranslator.com/')
     azure_face_detect = FaceDetectionRecognitionAzure(env_vars["key_multiservice"],
                                                       env_vars["endpoint_multiservice"])
-    return bot, voice, synthesizer, translate, azure_face_detect
+    ocr = OCR(env_vars["endpoint_multiservice"], env_vars["key_multiservice"])
+    return bot, voice, synthesizer, translate, azure_face_detect, ocr
 
 
 def detect_faces_azure(img_rgb, azurefacedetect):
@@ -52,6 +54,8 @@ def detect_faces_facenet(frame, facenet):
     boxes, confidences, nfaces = facenet.detect_faces(img_rgb)
     return boxes, confidences, nfaces, img_rgb
 
+def text_from_image(ocr, img_rgb, detected_language):
+    return ocr.ImageOCR(img_rgb, detected_language)
 
 def count_faces(cap, batch_size=30):
     facenet = FaceDetectionRecognition()
@@ -121,7 +125,7 @@ def main():
         env_vars = load_env_variables(required_vars=required_vars)
         cap = setup_camera()
 
-        bot, voice, synthesizer, translate, azure_face_detect = initialize_services(env_vars)
+        bot, voice, synthesizer, translate, azure_face_detect, ocr = initialize_services(env_vars)
         bot.create_system_prompt(env_vars["prompt_system"])
 
         while True:
@@ -144,7 +148,6 @@ def main():
         if 'cap' in locals() and cap.isOpened():
             cap.release()
         cv2.destroyAllWindows()
-
 
 if __name__ == "__main__":
     main()
