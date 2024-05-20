@@ -106,6 +106,11 @@ def interact_with_user(bot, voice, synthesizer, translate, nfaces):
             elif text.lower() == translate.translate("esci.", detected_lang[:2]):
                 synthesizer.synthesizer(translate.translate("A presto!", detected_lang[:2]), detected_lang)
                 return False  # Exit application
+            elif text.lower() == translate.translate("Per favore descrivimi questa immagine.", detected_lang[:2]):
+                img_jpg = open("image.jpg", "rb").read()
+                response = bot.food_analyzer("Descrivi questa immagine.", img_jpg,)
+                return False
+                
             else:
                 response = bot.chat(text)
                 synthesizer.synthesizer(response, detected_lang)
