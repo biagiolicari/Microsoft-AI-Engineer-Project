@@ -24,7 +24,7 @@ class Voice:
 
         speech_recognition_result = speech_recognizer.recognize_once()
         if speech_recognition_result.reason == speech_sdk.ResultReason.RecognizedSpeech:
-            auto_detect_source_language_result = speech_sdk.AutoDetectSourceLanguageResult(                    speech_recognition_result)
+            auto_detect_source_language_result = speech_sdk.AutoDetectSourceLanguageResult(speech_recognition_result)
             detected_language = auto_detect_source_language_result.language
             return speech_recognition_result.text, detected_language
         else:

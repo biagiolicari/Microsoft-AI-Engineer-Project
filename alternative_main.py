@@ -3,12 +3,11 @@ import os
 import cv2
 from dotenv import load_dotenv
 
-from azure_detect.azurefacedetect import FaceDetectionRecognitionAzure
-from azure_language.nlp import NLP
-from azure_ocr.ocr import OCR
-from azure_speech.synthesizer import Synthesizer
-from azure_speech.voice import Voice
-from azure_translate.translate import Translate
+from azure_resources.azurefacedetect import FaceDetectionRecognitionAzure
+from azure_resources.nlp import NLP
+from azure_resources.synthesizer import Synthesizer
+from azure_resources.voice import Voice
+from azure_resources.translate import Translate
 from cnn_detection.facenet_detection import FaceDetectionRecognition
 from large_language_model.bot_gpt import BotAgent
 
@@ -42,9 +41,8 @@ def initialize_services(env_vars):
                           'https://api.cognitive.microsofttranslator.com/')
     azure_face_detect = FaceDetectionRecognitionAzure(env_vars["key_multiservice"],
                                                       env_vars["endpoint_multiservice"])
-    ocr = OCR(env_vars["endpoint_multiservice"], env_vars["key_multiservice"])
     nlp = NLP(env_vars["endpoint_language"], env_vars["key_language"])
-    return bot, voice, synthesizer, translate, azure_face_detect, ocr, nlp
+    return bot, voice, synthesizer, translate, azure_face_detect, nlp
 
 
 def detect_faces_azure(img_rgb, azurefacedetect):
@@ -56,10 +54,6 @@ def detect_faces_facenet(frame, facenet):
     img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     boxes, confidences, nfaces = facenet.detect_faces(img_rgb)
     return boxes, confidences, nfaces, img_rgb
-
-
-def text_from_image(ocr, img_rgb, detected_language):
-    return ocr.ImageOCR(img_rgb, detected_language)
 
 
 def count_faces(cap, batch_size=30):
@@ -141,7 +135,7 @@ def get_frames_from_camera(cap, batch_size=50, output_filename="best_frame.jpg")
     best_frame = max(frame_scores, key=lambda x: x[1])[0]
 
     # Resize the best
-    resized_best_frame = cv2.resize(best_frame, (64, 64), interpolation=cv2.INTER_AREA)
+    resized_best_frame = cv2.resize(best_frame, (128, 128), interpolation=cv2.INTER_AREA)
 
     # Save the resized best frame as a JPEG file
     cv2.imwrite(output_filename, resized_best_frame)
@@ -157,23 +151,24 @@ def conversational_command(nlp, text):
 def interact_with_user(bot, voice, synthesizer, translate, nfaces, cap, nlp):
     if nfaces == 1:
         synthesizer.synthesizer(
-            "Ciao! Sono un assistente nutrizionale. In questo momento sei da solo, come posso aiutarti?", "it-IT")
+            "Hello! I am a nutritional assistant. At this moment you are alone, how can I help you?", "en-US")
     else:
         synthesizer.synthesizer(
-            f"Ciao! Sono un assistente nutrizionale. In questo momento siete in {nfaces}, come posso aiutarvi?",
-            "it-IT")
+            f"Hello! I am a nutritional assistant. At this moment you are {nfaces}, how can I help you?",
+            "en-US")
 
     while True:
         try:
             text, detected_lang = voice.transcribe_command()
+            print(detected_lang)
 
             if not text:
                 return True  # Restart face detection if no speech is detected
             else:
-                category, score = conversational_command(nlp, translate.translate(text, detected_lang[:2], 'en'))
+                category, score = conversational_command(nlp, translate.translate(text, detected_lang[:2]))
 
                 if category == "exit" and score >= 0.80:
-                    synthesizer.synthesizer(translate.translate("A presto!", detected_lang[:2], 'it'), detected_lang)
+                    synthesizer.synthesizer(translate.translate("See you soon!", detected_lang[:2]), detected_lang)
                     return False  # Exit application
                 elif category == "description" and score >= 0.80:
                     frame_from_webcam = get_frames_from_camera(cap)
@@ -186,7 +181,7 @@ def interact_with_user(bot, voice, synthesizer, translate, nfaces, cap, nlp):
 
         except Exception as e:
             synthesizer.synthesizer(
-                "Mi dispiace ma non ho capito bene. Potresti ripetere per favore?", "it-IT")
+                "I’m sorry but I didn’t understand. Could you please repeat?", "en-US")
             continue
 
 
@@ -199,7 +194,7 @@ def main():
         env_vars = load_env_variables(required_vars=required_vars)
         cap = setup_camera()
 
-        bot, voice, synthesizer, translate, azure_face_detect, ocr, nlp = initialize_services(env_vars)
+        bot, voice, synthesizer, translate, azure_face_detect, nlp = initialize_services(env_vars)
         bot.create_system_prompt(env_vars["prompt_system"])
 
         while True:
