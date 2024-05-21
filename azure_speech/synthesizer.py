@@ -2,12 +2,39 @@ import random
 
 import azure.cognitiveservices.speech as speech_sdk
 
+voice_styles = {
+    "it-IT": {
+        "IsabellaNeural": ["chat", "cheerful"]
+    },
+    "fr-FR": {
+        "DeniseNeural": ["cheerful", "sad"]
+    },
+    "en-US": {
+        "AriaNeural": [
+            "angry", "chat", "cheerful", "customerservice", "empathetic", "excited",
+            "friendly", "hopeful", "narration-professional", "newscast-casual",
+            "newscast-formal", "sad", "shouting", "terrified", "unfriendly",
+            "whispering"
+        ]
+    }
+}
+
+
+def get_random_voice_style(language):
+    if language in voice_styles:
+        voice = random.choice(list(voice_styles[language].keys()))
+        style = random.choice(voice_styles[language][voice])
+        return voice, style
+    else:
+        raise ValueError(f"No voice styles available for language: {language}")
+
 
 def generate_ssml(response_text, voice_name, lang):
     # Choose a random style for express-as
-    styles = ["cheerful", "empathetic", "calm", 'advertisement_upbeat', 'affectionate', 'customerservice',
-              'embarrassed', 'friendly', 'hopeful', 'whispering', 'unfriendly', 'shouting', 'lyrical', 'fearful']
-    selected_style = random.choice(styles)
+    #styles = ["cheerful", "empathetic", "calm", 'advertisement_upbeat', 'affectionate', 'customerservice',
+    #          'embarrassed', 'friendly', 'hopeful', 'whispering', 'unfriendly', 'shouting', 'lyrical', 'fearful']
+    style = get_random_voice_style(lang)
+    selected_style = random.choice(style)
 
     # Choose a random role (example roles: "default", "youngAdultFemale", "seniorMale")
     roles = ["default", "youngAdultFemale", "seniorMale", 'Boy', 'SeniorFemale']
@@ -33,10 +60,10 @@ def generate_ssml(response_text, voice_name, lang):
 
 class Synthesizer:
     map_neural_voice_synthesizer = {
-        'de-DE': 'de-DE-KatjaNeural',
-        'en-US': 'en-US-AvaNeural',
+        'de-DE': 'de-DE-ConradNeural1',
+        'en-US': 'en-US-AriaNeural',
         'fr-FR': 'fr-FR-DeniseNeural',
-        'it-IT': 'it-IT-ElsaNeural'
+        'it-IT': 'it-IT-IsabellaNeural'
     }
 
     def __init__(self, location_speech, key_speech) -> None:
