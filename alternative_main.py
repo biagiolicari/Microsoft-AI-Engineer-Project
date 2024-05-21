@@ -150,16 +150,16 @@ def get_frames_from_camera(cap, batch_size=50, output_filename="best_frame.jpg")
 
     return output_filename
 
-def test_command(nlp, text):
+def conversational(nlp, text):
     category, score = nlp.conversational_language_understanding("command", "command", text)
     return category, score
 
 
 def interact_with_user(bot, voice, synthesizer, translate, nfaces, cap, nlp):
     if nfaces == 1:
-        synthesizer.synthesizer("Ciao! Ho visto che sei solo, come posso aiutarti?", "it-IT")
+        synthesizer.synthesizer("Ciao! Sono un assistente nutrizionale. In questo momento sei da solo, come posso aiutarti?", "it-IT")
     else:
-        synthesizer.synthesizer(f"Ciao! Ho visto che siete in {nfaces}, come posso aiutarvi?", "it-IT")
+        synthesizer.synthesizer(f"Ciao! Sono un assistente nutrizionale. In questo momento siete in {nfaces}, come posso aiutarvi?", "it-IT")
 
     while True:
         try:
@@ -168,7 +168,7 @@ def interact_with_user(bot, voice, synthesizer, translate, nfaces, cap, nlp):
             if not text:
                 return True  # Restart face detection if no speech is detected
             else:
-                category, score = test_command(nlp, translate.translate(text, detected_lang[:2], 'en'))
+                category, score = conversational(nlp, translate.translate(text, detected_lang[:2], 'en'))
 
                 if category == "exit" and score >= 0.80:
                     synthesizer.synthesizer(translate.translate("A presto!", detected_lang[:2], 'it'), detected_lang)
@@ -181,7 +181,7 @@ def interact_with_user(bot, voice, synthesizer, translate, nfaces, cap, nlp):
                 else:
                     response = bot.chat(text)
                     synthesizer.synthesizer(response, detected_lang)
-                    
+
         except Exception as e:
             print(f"Error: {e}")
             if 'detected_lang' in locals():
