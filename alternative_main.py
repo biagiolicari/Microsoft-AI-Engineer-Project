@@ -34,7 +34,8 @@ def setup_camera(width=128, height=128):
 
 
 def initialize_services(env_vars):
-    bot = BotAgent(env_vars["key_openai"], env_vars["endpoint_openai"], env_vars["model_openai"], env_vars['model_openai_vision'])
+    bot = BotAgent(env_vars["key_openai"], env_vars["endpoint_openai"], env_vars["model_openai"],
+                   env_vars['model_openai_vision'])
     voice = Voice(env_vars["region_multiservice"], env_vars["key_multiservice"])
     synthesizer = Synthesizer(env_vars["region_multiservice"], env_vars["key_multiservice"])
     translate = Translate(env_vars["region_multiservice"], env_vars["key_multiservice"],
@@ -71,8 +72,7 @@ def count_faces(cap, batch_size=30):
         if not ret:
             raise Exception("Error: Failed to capture image.")
 
-        # Resize the frame early to speed up processing
-        frame = cv2.resize(frame, (64, 64))
+        frame = cv2.resize(frame, (128, 128))
 
         # FaceNet detection
         boxes, confidences, nfaces, img_rgb = detect_faces_facenet(frame, facenet)
@@ -150,6 +150,7 @@ def get_frames_from_camera(cap, batch_size=50, output_filename="best_frame.jpg")
 
     return output_filename
 
+
 def conversational(nlp, text):
     category, score = nlp.conversational_language_understanding("command", "command", text)
     return category, score
@@ -157,14 +158,17 @@ def conversational(nlp, text):
 
 def interact_with_user(bot, voice, synthesizer, translate, nfaces, cap, nlp):
     if nfaces == 1:
-        synthesizer.synthesizer("Ciao! Sono un assistente nutrizionale. In questo momento sei da solo, come posso aiutarti?", "it-IT")
+        synthesizer.synthesizer(
+            "Ciao! Sono un assistente nutrizionale. In questo momento sei da solo, come posso aiutarti?", "it-IT")
     else:
-        synthesizer.synthesizer(f"Ciao! Sono un assistente nutrizionale. In questo momento siete in {nfaces}, come posso aiutarvi?", "it-IT")
+        synthesizer.synthesizer(
+            f"Ciao! Sono un assistente nutrizionale. In questo momento siete in {nfaces}, come posso aiutarvi?",
+            "it-IT")
 
     while True:
         try:
             text, detected_lang = voice.transcribe_command()
-            
+
             if not text:
                 return True  # Restart face detection if no speech is detected
             else:
@@ -183,11 +187,9 @@ def interact_with_user(bot, voice, synthesizer, translate, nfaces, cap, nlp):
                     synthesizer.synthesizer(response, detected_lang)
 
         except Exception as e:
-            print(f"Error: {e}")
-            if 'detected_lang' in locals():
-                synthesizer.synthesizer(
-                    translate.translate("Mi dispiace, non ho capito. Riprova per favore.", detected_lang[:2], 'it'),
-                    detected_lang)
+            synthesizer.synthesizer(
+                "Mi dispiace non ho capito bene. Potresti ripetere per favore?", "it-IT")
+            continue
 
 
 def main():
