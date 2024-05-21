@@ -4,11 +4,11 @@ import cv2
 from dotenv import load_dotenv
 
 from azure_detect.azurefacedetect import FaceDetectionRecognitionAzure
+from azure_language.nlp import NLP
 from azure_ocr.ocr import OCR
 from azure_speech.synthesizer import Synthesizer
 from azure_speech.voice import Voice
 from azure_translate.translate import Translate
-from azure_language.nlp import NLP
 from cnn_detection.facenet_detection import FaceDetectionRecognition
 from large_language_model.bot_gpt import BotAgent
 
@@ -24,7 +24,7 @@ def load_env_variables(required_vars):
     return env_vars
 
 
-def setup_camera(width=128, height=128):
+def setup_camera(width=320, height=240):
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
@@ -71,8 +71,6 @@ def count_faces(cap, batch_size=30):
         ret, frame = cap.read()
         if not ret:
             raise Exception("Error: Failed to capture image.")
-
-        frame = cv2.resize(frame, (128, 128))
 
         # FaceNet detection
         boxes, confidences, nfaces, img_rgb = detect_faces_facenet(frame, facenet)
@@ -142,8 +140,8 @@ def get_frames_from_camera(cap, batch_size=50, output_filename="best_frame.jpg")
     # Select the frame with the highest clarity score
     best_frame = max(frame_scores, key=lambda x: x[1])[0]
 
-    # Resize the best frame to 64x64 pixels
-    resized_best_frame = cv2.resize(best_frame, (48, 48), interpolation=cv2.INTER_AREA)
+    # Resize the best
+    resized_best_frame = cv2.resize(best_frame, (64, 64), interpolation=cv2.INTER_AREA)
 
     # Save the resized best frame as a JPEG file
     cv2.imwrite(output_filename, resized_best_frame)
@@ -151,7 +149,7 @@ def get_frames_from_camera(cap, batch_size=50, output_filename="best_frame.jpg")
     return output_filename
 
 
-def conversational(nlp, text):
+def conversational_command(nlp, text):
     category, score = nlp.conversational_language_understanding("command", "command", text)
     return category, score
 
@@ -172,7 +170,7 @@ def interact_with_user(bot, voice, synthesizer, translate, nfaces, cap, nlp):
             if not text:
                 return True  # Restart face detection if no speech is detected
             else:
-                category, score = conversational(nlp, translate.translate(text, detected_lang[:2], 'en'))
+                category, score = conversational_command(nlp, translate.translate(text, detected_lang[:2], 'en'))
 
                 if category == "exit" and score >= 0.80:
                     synthesizer.synthesizer(translate.translate("A presto!", detected_lang[:2], 'it'), detected_lang)
@@ -188,7 +186,7 @@ def interact_with_user(bot, voice, synthesizer, translate, nfaces, cap, nlp):
 
         except Exception as e:
             synthesizer.synthesizer(
-                "Mi dispiace non ho capito bene. Potresti ripetere per favore?", "it-IT")
+                "Mi dispiace ma non ho capito bene. Potresti ripetere per favore?", "it-IT")
             continue
 
 
