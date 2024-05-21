@@ -8,6 +8,7 @@ from azure_ocr.ocr import OCR
 from azure_speech.synthesizer import Synthesizer
 from azure_speech.voice import Voice
 from azure_translate.translate import Translate
+from azure_language.nlp import NLP
 from cnn_detection.facenet_detection import FaceDetectionRecognition
 from large_language_model.bot_gpt import BotAgent
 
@@ -41,7 +42,8 @@ def initialize_services(env_vars):
     azure_face_detect = FaceDetectionRecognitionAzure(env_vars["key_multiservice"],
                                                       env_vars["endpoint_multiservice"])
     ocr = OCR(env_vars["endpoint_multiservice"], env_vars["key_multiservice"])
-    return bot, voice, synthesizer, translate, azure_face_detect, ocr
+    nlp = NLP(env_vars["endpoint_language"], env_vars["key_language"])
+    return bot, voice, synthesizer, translate, azure_face_detect, ocr, nlp
 
 
 def detect_faces_azure(img_rgb, azurefacedetect):
@@ -148,8 +150,12 @@ def get_frames_from_camera(cap, batch_size=50, output_filename="best_frame.jpg")
 
     return output_filename
 
+def test_command(nlp, text):
+    category, score = nlp.conversational_language_understanding("command", "command", text)
+    return category, score
 
-def interact_with_user(bot, voice, synthesizer, translate, nfaces, cap):
+
+def interact_with_user(bot, voice, synthesizer, translate, nfaces, cap, nlp):
     if nfaces == 1:
         synthesizer.synthesizer("Ciao! Ho visto che sei solo, come posso aiutarti?", "it-IT")
     else:
@@ -158,38 +164,42 @@ def interact_with_user(bot, voice, synthesizer, translate, nfaces, cap):
     while True:
         try:
             text, detected_lang = voice.transcribe_command()
+            
             if not text:
                 return True  # Restart face detection if no speech is detected
-            elif text.lower() == translate.translate("esci.", detected_lang[:2]):
-                synthesizer.synthesizer(translate.translate("A presto!", detected_lang[:2]), detected_lang)
-                return False  # Exit application
-            elif text.lower() == translate.translate("esprimi un tuo parere su ciò che vedi dalla webcam.",
-                                                     detected_lang[:2]):
-                frame_from_webcam = get_frames_from_camera(cap)
-                res = bot.chat_with_vision(frame_from_webcam)
-                synthesizer.synthesizer(response_text=res, speech_recognition_language=detected_lang)
-                continue
-
             else:
-                response = bot.chat(text)
-                synthesizer.synthesizer(response, detected_lang)
+                category, score = test_command(nlp, translate.translate(text, detected_lang[:2], 'en'))
+
+                if category == "exit" and score >= 0.80:
+                    synthesizer.synthesizer(translate.translate("A presto!", detected_lang[:2], 'it'), detected_lang)
+                    return False  # Exit application
+                elif category == "description" and score >= 0.80:
+                    frame_from_webcam = get_frames_from_camera(cap)
+                    res = bot.chat_with_vision(frame_from_webcam)
+                    synthesizer.synthesizer(response_text=res, speech_recognition_language=detected_lang)
+                    continue
+                else:
+                    response = bot.chat(text)
+                    synthesizer.synthesizer(response, detected_lang)
+                    
         except Exception as e:
             print(f"Error: {e}")
             if 'detected_lang' in locals():
                 synthesizer.synthesizer(
-                    translate.translate("Mi dispiace, non ho capito. Riprova per favore.", detected_lang[:2]),
+                    translate.translate("Mi dispiace, non ho capito. Riprova per favore.", detected_lang[:2], 'it'),
                     detected_lang)
 
 
 def main():
     required_vars = ["key_multiservice", "endpoint_multiservice", "region_multiservice",
-                     "key_openai", "endpoint_openai", "model_openai", "prompt_system", "model_openai_vision"]
+                     "key_openai", "endpoint_openai", "model_openai", "prompt_system", "model_openai_vision",
+                     "key_language", "endpoint_language", "region_language"]
 
     try:
         env_vars = load_env_variables(required_vars=required_vars)
         cap = setup_camera()
 
-        bot, voice, synthesizer, translate, azure_face_detect, ocr = initialize_services(env_vars)
+        bot, voice, synthesizer, translate, azure_face_detect, ocr, nlp = initialize_services(env_vars)
         bot.create_system_prompt(env_vars["prompt_system"])
 
         while True:
@@ -202,7 +212,7 @@ def main():
                 print(f"FaceNet detected {nfaces} faces.")
                 print(f"Azure detected {azure_faces} faces.")
 
-                should_continue = interact_with_user(bot, voice, synthesizer, translate, nfaces, cap)
+                should_continue = interact_with_user(bot, voice, synthesizer, translate, nfaces, cap, nlp)
                 if not should_continue:
                     break
 

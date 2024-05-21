@@ -9,7 +9,7 @@ class Translate:
         self.key_translate = key_translate
         self.endpoint_translate = endpoint_translate
 
-    def translate(self, text, detect_language):
+    def translate(self, text, detect_language, destination_language):
         path = 'translate'
         constructed_url = self.endpoint_translate + path
         # print(constructed_url)
@@ -17,7 +17,7 @@ class Translate:
         params = {
             'api-version': '3.0',
             'from': detect_language,
-            'to': 'it'
+            'to': destination_language
         }
 
         headers = {

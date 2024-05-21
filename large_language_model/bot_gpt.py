@@ -1,7 +1,7 @@
 import requests
 import base64
 from mimetypes import guess_type
-from open import AzureOpenAI
+from openai import AzureOpenAI
 
 
 class BotAgent:
